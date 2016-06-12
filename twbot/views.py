@@ -1,0 +1,52 @@
+import tweepy, time ,sys
+from tweepy import OAuthHandler
+from django.views import generic
+from django.http.response import HttpResponse
+from django.shortcuts import render
+from django.views import generic
+from django.http.response import HttpResponse
+import json, random ,re, requests,urllib,urllib.request
+from pprint import pprint
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from twitter.api import Twitter
+
+
+
+def process_or_store(tweet):
+    print(json.dumps(tweet))
+
+
+
+# Create your views here.
+class bot(generic.View):
+    def get(self, request, *args, **kwargs):
+        consumer_key = ''
+        consumer_secret = ''
+        access_key = ''
+        access_secret = ''
+        auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+        auth.set_access_token(access_key, access_secret)
+        api = tweepy.API(auth)
+        #initialize a list to hold all the tweepy Tweets
+        alltweets = []  
+        #make initial request for most recent tweets (200 is the maximum allowed count)
+        new_tweets = api.user_timeline(screen_name = "Virendra0414",count=2)
+        #save most recent tweets
+        alltweets.extend(new_tweets)
+        #save the id of the oldest tweet less one
+        oldest = alltweets[-1].id - 1
+        #keep grabbing tweets until there are no tweets left to grab
+        while len(new_tweets) > 0:
+            #print ("getting tweets before ")
+            #all subsiquent requests use the max_id param to prevent duplicates
+            new_tweets = api.user_timeline(screen_name = "Virendra0414",count=2,max_id=oldest)
+            #save most recent tweets
+            alltweets.extend(new_tweets)
+            #update the id of the oldest tweet less one
+            oldest = alltweets[-1].id - 1
+            #print ("... tweets downloaded so far")
+            #transform the tweepy tweets into a 2D array that will populate the csv 
+        outtweets = [[tweet.id_str, tweet.created_at, tweet.text.encode("utf-8")] for tweet in alltweets]
+        print (outtweets)
+        return render(request,'index.html',{'jj':outtweets})
